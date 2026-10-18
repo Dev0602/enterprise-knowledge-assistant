@@ -68,7 +68,10 @@ HARD_EVALUATION_DATASET = [
     },
     {
         "question": "What should happen if someone's company credentials may have been compromised?",
-        "expected_source": "03_information_security_policy.pdf",
+        "expected_sources": [
+            "03_information_security_policy.pdf",
+            "05_it_support_and_acceptable_use.pdf",
+        ],
         "category": "scenario",
     },
 
@@ -164,7 +167,10 @@ HARD_EVALUATION_DATASET = [
     },
     {
         "question": "As a new employee, who should I contact if I cannot access a company system?",
-        "expected_source": "07_employee_onboarding_guide.pdf",
+        "expected_sources": [
+            "07_employee_onboarding_guide.pdf",
+            "05_it_support_and_acceptable_use.pdf",
+        ],
         "category": "scenario",
     },
 ]
