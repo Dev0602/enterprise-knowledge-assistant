@@ -118,7 +118,6 @@ for i, test_case in enumerate(TEST_CASES, start=1):
 
     print(f"\nGrounding: {verdict}")
 
-
     # --------------------------------------------------
     # Answerability evaluation
     # --------------------------------------------------
@@ -139,7 +138,6 @@ for i, test_case in enumerate(TEST_CASES, start=1):
         if verdict == "ABSTENTION":
             abstention_correct += 1
 
-
     # --------------------------------------------------
     # Grounding evaluation
     # --------------------------------------------------
@@ -150,7 +148,6 @@ for i, test_case in enumerate(TEST_CASES, start=1):
 
         if verdict == "SUPPORTED":
             grounded_answers += 1
-
 
     # --------------------------------------------------
     # Source retrieval evaluation
@@ -223,13 +220,13 @@ print(
 )
 
 print("\n" + "=" * 80)
-print("RETRIEVAL METRICS FROM PREVIOUS EVALUATION")
+print("RETRIEVAL METRICS")
 print("=" * 80)
 
-print("Recall@3: 100.00%")
-print("Vector Search MRR: 1.0000")
-print("Hybrid Search MRR: 0.7381")
-print("Hybrid + Reranker MRR: 0.9286")
+print(
+    "Run `python -m tests.test_mrr` "
+    "to calculate current retrieval metrics."
+)
 
 print("\n" + "=" * 80)
 print("EVALUATION COMPLETE")
