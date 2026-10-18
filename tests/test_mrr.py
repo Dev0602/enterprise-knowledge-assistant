@@ -10,29 +10,31 @@ hybrid_retriever = HybridRetriever()
 reranker = Reranker()
 
 
-def reciprocal_rank(results, expected_source):
+def find_rank(results, expected_source):
     """
-    Calculate Reciprocal Rank for one question.
+    Return the rank of the expected source.
 
-    Correct document at:
-    #1 -> 1.0
-    #2 -> 0.5
-    #3 -> 0.333
+    Rank 1 = first result
+    Rank 2 = second result
+    Rank 3 = third result
+
+    Returns 0 if the expected source was not retrieved.
     """
 
     for rank, result in enumerate(results, start=1):
-
         source = result["metadata"]["source"]
 
         if source == expected_source:
-            return 1 / rank
+            return rank
 
-    return 0.0
+    return 0
 
 
-def evaluate_mrr(name, retrieve_function):
+def evaluate_retrieval(name, retrieve_function):
 
-    total_score = 0.0
+    reciprocal_rank_total = 0.0
+    hit_at_1_total = 0
+    hit_at_3_total = 0
 
     print("\n" + "=" * 70)
     print(name)
@@ -50,43 +52,55 @@ def evaluate_mrr(name, retrieve_function):
             for result in results
         ]
 
-        rr = reciprocal_rank(
+        rank = find_rank(
             results,
             expected_source,
         )
 
-        total_score += rr
+        reciprocal_rank = (
+            1 / rank
+            if rank > 0
+            else 0.0
+        )
 
-        rank = 0
+        hit_at_1 = rank == 1
+        hit_at_3 = 1 <= rank <= 3
 
-        for i, source in enumerate(
-            retrieved_sources,
-            start=1,
-        ):
-            if source == expected_source:
-                rank = i
-                break
+        reciprocal_rank_total += reciprocal_rank
+        hit_at_1_total += int(hit_at_1)
+        hit_at_3_total += int(hit_at_3)
 
         print(f"\nQuestion: {question}")
         print(f"Expected: {expected_source}")
         print(f"Retrieved: {retrieved_sources}")
         print(f"Correct Rank: {rank}")
-        print(f"Reciprocal Rank: {rr:.4f}")
+        print(f"Reciprocal Rank: {reciprocal_rank:.4f}")
 
-    mrr = total_score / len(EVALUATION_DATASET)
+    total_questions = len(EVALUATION_DATASET)
+
+    hit_at_1_rate = hit_at_1_total / total_questions
+    hit_at_3_rate = hit_at_3_total / total_questions
+    mrr = reciprocal_rank_total / total_questions
 
     print("\n" + "-" * 70)
-    print(f"MRR: {mrr:.4f}")
+    print(f"Questions: {total_questions}")
+    print(f"Hit@1:     {hit_at_1_rate:.2%}")
+    print(f"Hit@3:     {hit_at_3_rate:.2%}")
+    print(f"MRR:       {mrr:.4f}")
     print("-" * 70)
 
-    return mrr
+    return {
+        "hit_at_1": hit_at_1_rate,
+        "hit_at_3": hit_at_3_rate,
+        "mrr": mrr,
+    }
 
 
 # --------------------------------------------------
 # VECTOR SEARCH
 # --------------------------------------------------
 
-vector_mrr = evaluate_mrr(
+vector_metrics = evaluate_retrieval(
     "1. VECTOR SEARCH",
     lambda question: vector_retriever.retrieve(
         query=question,
@@ -99,7 +113,7 @@ vector_mrr = evaluate_mrr(
 # HYBRID SEARCH
 # --------------------------------------------------
 
-hybrid_mrr = evaluate_mrr(
+hybrid_metrics = evaluate_retrieval(
     "2. HYBRID SEARCH",
     lambda question: unique_sources(
         hybrid_retriever.retrieve(
@@ -132,7 +146,7 @@ def retrieve_with_reranker(question):
     return unique_results[:3]
 
 
-reranker_mrr = evaluate_mrr(
+reranker_metrics = evaluate_retrieval(
     "3. HYBRID + CROSS-ENCODER RERANKER",
     retrieve_with_reranker,
 )
@@ -143,11 +157,37 @@ reranker_mrr = evaluate_mrr(
 # --------------------------------------------------
 
 print("\n" + "=" * 70)
-print("FINAL MRR COMPARISON")
+print("FINAL RETRIEVAL COMPARISON")
 print("=" * 70)
 
-print(f"Vector Search:              {vector_mrr:.4f}")
-print(f"Hybrid Search:              {hybrid_mrr:.4f}")
-print(f"Hybrid + Reranker:          {reranker_mrr:.4f}")
+print(
+    f"{'Method':<28}"
+    f"{'Hit@1':>12}"
+    f"{'Hit@3':>12}"
+    f"{'MRR':>12}"
+)
+
+print("-" * 70)
+
+print(
+    f"{'Vector Search':<28}"
+    f"{vector_metrics['hit_at_1']:>11.2%}"
+    f"{vector_metrics['hit_at_3']:>11.2%}"
+    f"{vector_metrics['mrr']:>12.4f}"
+)
+
+print(
+    f"{'Hybrid Search':<28}"
+    f"{hybrid_metrics['hit_at_1']:>11.2%}"
+    f"{hybrid_metrics['hit_at_3']:>11.2%}"
+    f"{hybrid_metrics['mrr']:>12.4f}"
+)
+
+print(
+    f"{'Hybrid + Reranker':<28}"
+    f"{reranker_metrics['hit_at_1']:>11.2%}"
+    f"{reranker_metrics['hit_at_3']:>11.2%}"
+    f"{reranker_metrics['mrr']:>12.4f}"
+)
 
 print("=" * 70)
