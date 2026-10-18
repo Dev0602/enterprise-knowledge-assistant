@@ -67,8 +67,40 @@ for message in st.session_state.messages:
 
             with st.expander("📄 Sources"):
 
-                for source in message["sources"]:
-                    st.write(f"- {source}")
+                source_details = message.get(
+                    "source_details",
+                    []
+                )
+
+                if source_details:
+
+                    for detail in source_details:
+
+                        source = detail["source"]
+                        page_number = detail.get(
+                            "page_number"
+                        )
+                        passage = detail.get(
+                            "passage",
+                            ""
+                        )
+
+                        if page_number:
+                            st.markdown(
+                                f"**{source} — Page {page_number}**"
+                            )
+                        else:
+                            st.markdown(
+                                f"**{source}**"
+                            )
+
+                        if passage:
+                            st.caption(passage)
+
+                else:
+
+                    for source in message["sources"]:
+                        st.write(f"- {source}")
 
         # -----------------------------------------
         # Grounding status
@@ -139,6 +171,10 @@ if question:
 
         answer = result["answer"]
         sources = result["sources"]
+        source_details = result.get(
+            "source_details",
+            []
+        )
         grounding = result["grounding"]
 
         # -----------------------------------------
@@ -179,8 +215,35 @@ if question:
 
             with st.expander("📄 Sources"):
 
-                for source in sources:
-                    st.write(f"- {source}")
+                if source_details:
+
+                    for detail in source_details:
+
+                        source = detail["source"]
+                        page_number = detail.get(
+                            "page_number"
+                        )
+                        passage = detail.get(
+                            "passage",
+                            ""
+                        )
+
+                        if page_number:
+                            st.markdown(
+                                f"**{source} — Page {page_number}**"
+                            )
+                        else:
+                            st.markdown(
+                                f"**{source}**"
+                            )
+
+                        if passage:
+                            st.caption(passage)
+
+                else:
+
+                    for source in sources:
+                        st.write(f"- {source}")
 
     # -----------------------------------------
     # Save assistant message
@@ -191,6 +254,7 @@ if question:
             "role": "assistant",
             "content": answer,
             "sources": sources,
+            "source_details": source_details,
             "grounding": grounding,
         }
     )

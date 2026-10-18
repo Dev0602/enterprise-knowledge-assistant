@@ -67,6 +67,7 @@ class RAGPipeline:
             return {
                 "answer": FALLBACK_ANSWER,
                 "sources": [],
+                "source_details": [],
                 "documents": [],
                 "grounding": {
                     "verdict": "ABSTENTION",
@@ -91,6 +92,7 @@ class RAGPipeline:
             return {
                 "answer": FALLBACK_ANSWER,
                 "sources": [],
+                "source_details": [],
                 "documents": [],
                 "grounding": {
                     "verdict": "ABSTENTION",
@@ -115,6 +117,7 @@ class RAGPipeline:
             return {
                 "answer": FALLBACK_ANSWER,
                 "sources": [],
+                "source_details": [],
                 "documents": [],
                 "grounding": {
                     "verdict": "ABSTENTION",
@@ -157,8 +160,17 @@ class RAGPipeline:
             source = document["metadata"]["source"]
             text = document["text"]
 
+            page_number = document["metadata"].get(
+                "page_number"
+            )
+
+            source_label = source
+
+            if page_number:
+                source_label += f" — Page {page_number}"
+
             context_parts.append(
-                f"Source: {source}\n{text}"
+                f"Source: {source_label}\n{text}"
             )
 
         context = "\n\n".join(context_parts)
@@ -187,13 +199,43 @@ class RAGPipeline:
         # -----------------------------------------
 
         sources = []
+        source_details = []
+        seen_source_pages = set()
 
         for document in unique_documents:
 
             source = document["metadata"]["source"]
+            page_number = document["metadata"].get(
+                "page_number"
+            )
 
             if source not in sources:
                 sources.append(source)
+
+            source_page_key = (
+                source,
+                page_number,
+            )
+
+            if source_page_key in seen_source_pages:
+                continue
+
+            seen_source_pages.add(source_page_key)
+
+            passage = " ".join(
+                document["text"].split()
+            )
+
+            if len(passage) > 350:
+                passage = passage[:350].rstrip() + "..."
+
+            source_details.append(
+                {
+                    "source": source,
+                    "page_number": page_number,
+                    "passage": passage,
+                }
+            )
 
         # -----------------------------------------
         # 9. Return complete result
@@ -202,6 +244,7 @@ class RAGPipeline:
         return {
             "answer": answer,
             "sources": sources,
+            "source_details": source_details,
             "documents": unique_documents,
             "grounding": grounding,
         }

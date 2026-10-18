@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.ingestion.loader import load_pdf
+from src.ingestion.loader import load_pdf_pages
 from src.ingestion.chunker import chunk_text
 from src.embeddings.embedder import Embedder
 from src.vectorstore.chroma_store import ChromaStore
@@ -10,9 +10,8 @@ DOCUMENTS_DIR = Path("data/documents")
 
 
 def ingest_documents():
-    """Load PDFs, chunk text, create embeddings, and store them in ChromaDB."""
+    """Load PDFs, preserve page numbers, chunk, embed, and store in ChromaDB."""
 
-    # 1. Find all PDF files
     pdf_files = sorted(DOCUMENTS_DIR.glob("*.pdf"))
 
     if not pdf_files:
@@ -21,38 +20,55 @@ def ingest_documents():
 
     print(f"Found {len(pdf_files)} PDF files.")
 
-    # 2. Initialize embedding model and ChromaDB
     embedder = Embedder()
     store = ChromaStore()
 
     total_chunks = 0
 
-    # 3. Process each PDF
     for pdf_path in pdf_files:
 
         print(f"\nProcessing: {pdf_path.name}")
 
-        # Load PDF text
-        text = load_pdf(str(pdf_path))
+        pages = load_pdf_pages(str(pdf_path))
 
-        if not text:
+        if not pages:
             print("No text extracted from this PDF.")
             continue
 
-        print(f"Extracted {len(text)} characters.")
-
-        # Chunk the text
-        chunks = chunk_text(
-            text=text,
-            source=pdf_path.name,
+        total_characters = sum(
+            len(page["text"])
+            for page in pages
         )
+
+        print(
+            f"Extracted {total_characters} characters "
+            f"from {len(pages)} page(s)."
+        )
+
+        chunks = []
+        global_chunk_index = 0
+
+        for page in pages:
+
+            page_chunks = chunk_text(
+                text=page["text"],
+                source=pdf_path.name,
+            )
+
+            for chunk in page_chunks:
+
+                chunk["chunk_index"] = global_chunk_index
+                chunk["page_number"] = page["page_number"]
+
+                chunks.append(chunk)
+
+                global_chunk_index += 1
 
         print(f"Created {len(chunks)} chunks.")
 
         if not chunks:
             continue
 
-        # Prepare data for ChromaDB
         ids = []
         documents = []
         embeddings = []
@@ -60,9 +76,15 @@ def ingest_documents():
 
         for chunk in chunks:
 
-            chunk_id = f"{pdf_path.stem}_{chunk['chunk_index']}"
+            chunk_id = (
+                f"{pdf_path.stem}_"
+                f"p{chunk['page_number']}_"
+                f"c{chunk['chunk_index']}"
+            )
 
-            embedding = embedder.embed(chunk["text"])
+            embedding = embedder.embed(
+                chunk["text"]
+            )
 
             ids.append(chunk_id)
             documents.append(chunk["text"])
@@ -71,13 +93,13 @@ def ingest_documents():
             metadatas.append(
                 {
                     "source": chunk["source"],
+                    "page_number": chunk["page_number"],
                     "chunk_index": chunk["chunk_index"],
                     "start_char": chunk["start_char"],
                     "end_char": chunk["end_char"],
                 }
             )
 
-        # Store everything in ChromaDB
         store.add_documents(
             ids=ids,
             documents=documents,
@@ -89,14 +111,16 @@ def ingest_documents():
 
         print(f"Stored {len(chunks)} chunks.")
 
-    # 4. Final summary
     print("\n" + "=" * 50)
     print("INGESTION COMPLETE")
     print("=" * 50)
 
     print(f"PDF files processed: {len(pdf_files)}")
     print(f"Total chunks added: {total_chunks}")
-    print(f"Chroma collection size: {store.collection.count()}")
+    print(
+        f"Chroma collection size: "
+        f"{store.collection.count()}"
+    )
 
 
 if __name__ == "__main__":
