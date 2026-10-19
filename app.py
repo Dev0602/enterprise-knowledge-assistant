@@ -9,7 +9,6 @@ from src.rag_pipeline import RAGPipeline
 
 st.set_page_config(
     page_title="Enterprise Knowledge Assistant",
-    page_icon="📚",
     layout="centered",
 )
 
@@ -18,7 +17,7 @@ st.set_page_config(
 # Title
 # -----------------------------------------
 
-st.title("📚 Enterprise Knowledge Assistant")
+st.title("Enterprise Knowledge Assistant")
 
 st.caption(
     "Ask questions about company policies "
@@ -65,7 +64,7 @@ for message in st.session_state.messages:
             and message.get("sources")
         ):
 
-            with st.expander("📄 Sources"):
+            with st.expander("Sources"):
 
                 source_details = message.get(
                     "source_details",
@@ -114,16 +113,16 @@ for message in st.session_state.messages:
             verdict = message["grounding"]["verdict"]
 
             if verdict == "SUPPORTED":
-                st.success("✅ Answer grounded in company information.")
+                st.success("Answer grounded in company information.")
 
             elif verdict == "ABSTENTION":
                 st.warning(
-                    "⚠️ Information not found in the knowledge base."
+                    "Information not found in the knowledge base."
                 )
 
             else:
                 st.error(
-                    "❌ Answer could not be verified against the knowledge base."
+                    "Answer could not be verified against the knowledge base."
                 )
 
 
@@ -192,19 +191,19 @@ if question:
         if verdict == "SUPPORTED":
 
             st.success(
-                "✅ Answer grounded in company information."
+                "Answer grounded in company information."
             )
 
         elif verdict == "ABSTENTION":
 
             st.warning(
-                "⚠️ Information not found in the knowledge base."
+                "Information not found in the knowledge base."
             )
 
         else:
 
             st.error(
-                "❌ Answer could not be verified against the knowledge base."
+                "Answer could not be verified against the knowledge base."
             )
 
         # -----------------------------------------
@@ -213,7 +212,7 @@ if question:
 
         if sources:
 
-            with st.expander("📄 Sources"):
+            with st.expander("Sources"):
 
                 if source_details:
 
