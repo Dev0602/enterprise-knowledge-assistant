@@ -1,4 +1,3 @@
-cat > README.md <<'EOF'
 # 📚 Enterprise Knowledge Assistant
 
 A production-style Retrieval-Augmented Generation (RAG) system for answering questions from company policies and internal documents.

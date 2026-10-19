@@ -1,8 +1,11 @@
+import os
+
 import requests
 
 
-MODEL_NAME = "qwen2.5:3b"
-OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_URL = f"{OLLAMA_HOST.rstrip('/')}/api/generate"
 
 
 def generate_answer(question: str, context: str) -> str:

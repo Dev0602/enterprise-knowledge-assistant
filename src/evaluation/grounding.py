@@ -1,7 +1,14 @@
+import os
+
 import ollama
 
 
-MODEL_NAME = "qwen2.5:3b"
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+OLLAMA_CLIENT = ollama.Client(
+    host=OLLAMA_HOST
+)
 
 
 def check_groundedness(
@@ -126,7 +133,7 @@ REASON: The answer contains factual claims that are not
 supported by the company information.
 """
 
-    response = ollama.chat(
+    response = OLLAMA_CLIENT.chat(
         model=MODEL_NAME,
         messages=[
             {
